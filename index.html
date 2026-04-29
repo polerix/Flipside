@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flipside — Bar Management</title>
+<meta name="description" content="Live floor management for Flipside bar: tables, stools, servers, orders, reservations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── HEADER HUD ───────────────────────────────────────────── -->
+<header class="hud">
+  <div class="hud-logo">
+    <img src="SVG/BarLogoFLIPSIDE.svg" alt="Flipside" id="flipside-logo">
+  </div>
+  <div class="hud-stats">
+    <span class="chip" id="chip-indoor">Indoor: 0/0</span>
+    <span class="chip chip-patio" id="chip-patio">Patio: 0/0</span>
+    <span class="chip chip-bar" id="chip-bar">Bar: 0 open</span>
+  </div>
+  <div class="hud-servers" id="server-roster"></div>
+  <div class="hud-edit-controls">
+    <button class="edit-mode-btn" id="edit-mode-btn" title="Toggle Edit Mode to drag entities">✏️ Edit Layout</button>
+    <button class="reset-pos-btn" id="reset-pos-btn" title="Reset all positions to defaults" style="display:none">↺ Reset</button>
+  </div>
+  <div class="hud-clock" id="clock">--:--</div>
+</header>
+
+<!-- ── FLOOR CANVAS ─────────────────────────────────────────── -->
+<main class="floor-wrap">
+  <div class="floor-canvas" id="floor-canvas">
+    <!-- Base floor plan -->
+    <img src="SVG/FloorPlan.svg" class="floor-plan-img" id="floor-plan" alt="Floor Plan" draggable="false">
+    <!-- Entities injected by JS -->
+    <div id="entities"></div>
+  </div>
+  <!-- Zone labels -->
+  <div class="zone-label zone-indoor" style="top:38%;left:28%">Indoor Dining</div>
+  <div class="zone-label zone-patio" style="top:82%;left:72%">Patio</div>
+  <div class="zone-label zone-bar" style="top:15%;left:72%">Bar</div>
+</main>
+
+<!-- ── SIDE PANEL ───────────────────────────────────────────── -->
+<aside class="side-panel" id="side-panel">
+  <button class="panel-close" id="panel-close">✕</button>
+  <div class="panel-header">
+    <div class="panel-icon-wrap" id="panel-icon"></div>
+    <div>
+      <div class="panel-title" id="panel-title">Table T1</div>
+      <div class="panel-zone" id="panel-zone">Indoor</div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="panel-section">
+    <div class="section-label">Status</div>
+    <div class="status-buttons" id="status-buttons"></div>
+  </div>
+
+  <!-- Server -->
+  <div class="panel-section">
+    <div class="section-label">Server</div>
+    <select id="server-select" class="panel-select">
+      <option value="">— Unassigned —</option>
+    </select>
+  </div>
+
+  <!-- Reserved toggle -->
+  <div class="panel-section" id="reserved-section">
+    <div class="section-label">Reservation</div>
+    <button class="reserve-btn" id="reserve-btn">🔴 Mark Reserved</button>
+  </div>
+
+  <!-- Order tracker -->
+  <div class="panel-section" id="order-section">
+    <div class="section-label">Order Tracker</div>
+    <div class="order-quick-btns">
+      <button class="order-btn" data-item="🍺 Beer">🍺 Beer</button>
+      <button class="order-btn" data-item="🍷 Wine">🍷 Wine</button>
+      <button class="order-btn" data-item="🍸 Cocktail">🍸 Cocktail</button>
+      <button class="order-btn" data-item="🥃 Shot">🥃 Shot</button>
+      <button class="order-btn" data-item="🥤 Soft">🥤 Soft</button>
+      <button class="order-btn" data-item="🍔 Food">🍔 Food</button>
+    </div>
+    <div class="order-list" id="order-list"></div>
+    <button class="clear-order-btn" id="clear-order">Clear Orders</button>
+  </div>
+
+  <!-- Notes -->
+  <div class="panel-section">
+    <div class="section-label">Notes</div>
+    <textarea class="panel-notes" id="panel-notes" placeholder="Special requests, VIP info…"></textarea>
+  </div>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<!-- ── BATHROOM STATUS PANEL ────────────────────────────────── -->
+<div class="bath-dock" id="bath-dock">
+  <div class="bath-title">🚻 Facilities</div>
+  <div id="bath-fixtures"></div>
+</div>
+
+<!-- ── TOAST ────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<div class="edit-banner" id="edit-banner">✏️ Edit Layout Mode — Drag entities to position them &nbsp;·&nbsp; Click "Edit Layout" again to save &amp; exit</div>
+
+<script src="app.js"></script>
+</body>
+</html>
