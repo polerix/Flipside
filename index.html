@@ -22,25 +22,30 @@
     <span class="chip chip-bar" id="chip-bar">Bar: 0 open</span>
   </div>
   <div class="hud-servers" id="server-roster"></div>
-  <div class="hud-edit-controls">
-    <button class="edit-mode-btn" id="edit-mode-btn" title="Toggle Edit Mode to drag entities">✏️ Edit Layout</button>
-    <button class="reset-pos-btn" id="reset-pos-btn" title="Reset all positions to defaults" style="display:none">↺ Reset</button>
-  </div>
   <div class="hud-clock" id="clock">--:--</div>
 </header>
 
 <!-- ── FLOOR CANVAS ─────────────────────────────────────────── -->
 <main class="floor-wrap">
-  <div class="floor-canvas" id="floor-canvas">
-    <!-- Base floor plan -->
-    <img src="SVG/FloorPlan.svg" class="floor-plan-img" id="floor-plan" alt="Floor Plan" draggable="false">
-    <!-- Entities injected by JS -->
-    <div id="entities"></div>
-  </div>
-  <!-- Zone labels -->
-  <div class="zone-label zone-indoor" style="top:38%;left:28%">Indoor Dining</div>
-  <div class="zone-label zone-patio" style="top:82%;left:72%">Patio</div>
-  <div class="zone-label zone-bar" style="top:15%;left:72%">Bar</div>
+  <!-- Floor plan: CompleteLayout.svg referenced as SVG image, overlaid with interactive layer -->
+  <svg id="floor-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1570.35 945.01">
+    <defs>
+      <!-- Dark filter applied only to the artwork image -->
+      <filter id="artwork-filter" color-interpolation-filters="sRGB">
+        <feColorMatrix type="saturate" values="0.8"/>
+        <feComponentTransfer>
+          <feFuncR type="linear" slope="0.5" intercept="0.05"/>
+          <feFuncG type="linear" slope="0.5" intercept="0.07"/>
+          <feFuncB type="linear" slope="0.6" intercept="0.12"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <!-- Artwork: tinted dark to match the app theme -->
+    <image href="SVG/CompleteLayout.svg" x="0" y="0" width="1570.35" height="945.01"
+           filter="url(#artwork-filter)"/>
+    <!-- Interactive overlay: status rings, labels, server halos — injected by app.js -->
+    <g id="interactive-layer"></g>
+  </svg>
 </main>
 
 <!-- ── SIDE PANEL ───────────────────────────────────────────── -->
@@ -97,7 +102,7 @@
 </aside>
 <div class="overlay" id="overlay"></div>
 
-<!-- ── BATHROOM STATUS PANEL ────────────────────────────────── -->
+<!-- ── BATHROOM STATUS DOCK ────────────────────────────────── -->
 <div class="bath-dock" id="bath-dock">
   <div class="bath-title">🚻 Facilities</div>
   <div id="bath-fixtures"></div>
@@ -105,8 +110,6 @@
 
 <!-- ── TOAST ────────────────────────────────────────────────── -->
 <div class="toast" id="toast"></div>
-
-<div class="edit-banner" id="edit-banner">✏️ Edit Layout Mode — Drag entities to position them &nbsp;·&nbsp; Click "Edit Layout" again to save &amp; exit</div>
 
 <script src="app.js"></script>
 </body>

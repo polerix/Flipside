@@ -1,85 +1,72 @@
 // ── FLIPSIDE BAR MANAGEMENT ─────────────────────────────────
 'use strict';
 
-// ── EDIT MODE ─────────────────────────────────────────────────
-let editMode = false;
-let positions = {};     // { [id]: { x, y } } — overrides ENTITIES defaults
-let dragState = null;   // { id, el, startMouseX, startMouseY, startX, startY }
-
-function loadPositions() {
-  try {
-    const raw = localStorage.getItem('flipside_positions');
-    if (raw) positions = JSON.parse(raw);
-  } catch(e) {}
-}
-
-function savePositions() {
-  localStorage.setItem('flipside_positions', JSON.stringify(positions));
-}
-
-function getEntityPos(e) {
-  return positions[e.id] || { x: e.x, y: e.y };
-}
+// SVG coordinate space: viewBox 0 0 1570.35 945.01
+// All cx/cy values are in those units — they scale perfectly with the SVG.
 
 // ── SERVERS ───────────────────────────────────────────────────
 const SERVERS = [
-  { id: 0, name: 'Alex',  color: '#5b8dee' },
+  { id: 0, name: 'Alex',   color: '#5b8dee' },
   { id: 1, name: 'Jordan', color: '#a855f7' },
-  { id: 2, name: 'Sam',   color: '#f59e0b' },
-  { id: 3, name: 'Riley', color: '#22c55e' },
+  { id: 2, name: 'Sam',    color: '#f59e0b' },
+  { id: 3, name: 'Riley',  color: '#22c55e' },
   { id: 4, name: 'Morgan', color: '#ef4444' },
-  { id: 5, name: 'Casey', color: '#06b6d4' },
+  { id: 5, name: 'Casey',  color: '#06b6d4' },
 ];
 
 // ── ENTITY DEFINITIONS ────────────────────────────────────────
-// Positions are expressed as % of floor plan image dimensions (1227×816)
-// so they scale with the responsive image. Adjust these to match your real layout.
+// cx / cy are SVG user-space coordinates (viewBox 0 0 1570.35 945.01)
+// Mapped directly from CompleteLayout.svg geometry — no % math needed.
 const ENTITIES = [
-  // ── INDOOR DINING TABLES ──
-  { id:'T1', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:19.0, y:54.0, w:52, h:52 },
-  { id:'T2', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:25.5, y:54.0, w:52, h:52 },
-  { id:'T3', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:32.0, y:54.0, w:52, h:52 },
-  { id:'T4', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:19.0, y:65.0, w:52, h:52 },
-  { id:'T5', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:25.5, y:65.0, w:52, h:52 },
-  { id:'T6', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:32.0, y:65.0, w:52, h:52 },
-  { id:'T7', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:38.5, y:54.0, w:52, h:52 },
-  { id:'T8', type:'table', zone:'indoor',  icon:'SVG/DiningTable.svg', x:38.5, y:65.0, w:52, h:52 },
+
+  // ── BAR STOOLS (along the bar top, y ≈ 250) ──
+  { id:'A',  type:'stool', zone:'bar',     icon:'🪑', cx: 587,  cy: 250 },
+  { id:'B',  type:'stool', zone:'bar',     icon:'🪑', cx: 628,  cy: 250 },
+  { id:'C',  type:'stool', zone:'bar',     icon:'🪑', cx: 668,  cy: 250 },
+  { id:'D',  type:'stool', zone:'bar',     icon:'🪑', cx: 709,  cy: 250 },
+  { id:'E',  type:'stool', zone:'bar',     icon:'🪑', cx: 749,  cy: 250 },
+  { id:'F',  type:'stool', zone:'bar',     icon:'🪑', cx: 789,  cy: 250 },
+  { id:'G',  type:'stool', zone:'bar',     icon:'🪑', cx: 830,  cy: 250 },
+  { id:'H',  type:'stool', zone:'bar',     icon:'🪑', cx: 870,  cy: 250 },
+  { id:'I',  type:'stool', zone:'bar',     icon:'🪑', cx: 910,  cy: 250 },
+  { id:'J',  type:'stool', zone:'bar',     icon:'🪑', cx: 951,  cy: 250 },
+  { id:'K',  type:'stool', zone:'bar',     icon:'🪑', cx: 991,  cy: 250 },
+  { id:'L',  type:'stool', zone:'bar',     icon:'🪑', cx:1031,  cy: 250 },
+  { id:'M',  type:'stool', zone:'bar',     icon:'🪑', cx:1072,  cy: 250 },
+
+  // ── INDOOR ROUND TABLES (row 1, y ≈ 450) ──
+  { id:'T1', type:'table', zone:'indoor',  icon:'🍽️', cx: 609,  cy: 450 },
+  { id:'T2', type:'table', zone:'indoor',  icon:'🍽️', cx: 781,  cy: 450 },
+  { id:'T3', type:'table', zone:'indoor',  icon:'🍽️', cx: 954,  cy: 450 },
+
+  // ── INDOOR ROUND TABLES (row 2, y ≈ 619) ──
+  { id:'T4', type:'table', zone:'indoor',  icon:'🍽️', cx: 695,  cy: 619 },
+  { id:'T5', type:'table', zone:'indoor',  icon:'🍽️', cx: 867,  cy: 619 },
+  { id:'T6', type:'table', zone:'indoor',  icon:'🍽️', cx:1040,  cy: 619 },
 
   // ── PATIO TABLES ──
-  { id:'P1', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:55.0, y:72.0, w:52, h:52 },
-  { id:'P2', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:63.0, y:72.0, w:52, h:52 },
-  { id:'P3', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:71.0, y:72.0, w:52, h:52 },
-  { id:'P4', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:79.0, y:72.0, w:52, h:52 },
-  { id:'P5', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:87.0, y:72.0, w:52, h:52 },
-  { id:'P6', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:55.0, y:84.0, w:52, h:52 },
-  { id:'P7', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:63.0, y:84.0, w:52, h:52 },
-  { id:'P8', type:'table', zone:'patio',   icon:'SVG/DiningTable.svg', x:71.0, y:84.0, w:52, h:52 },
-
-  // ── BAR STOOLS ──
-  { id:'A', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:55.0, y:18.0, w:28, h:28 },
-  { id:'B', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:58.5, y:18.0, w:28, h:28 },
-  { id:'C', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:62.0, y:18.0, w:28, h:28 },
-  { id:'D', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:65.5, y:18.0, w:28, h:28 },
-  { id:'E', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:69.0, y:18.0, w:28, h:28 },
-  { id:'F', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:72.5, y:18.0, w:28, h:28 },
-  { id:'G', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:76.0, y:18.0, w:28, h:28 },
-  { id:'H', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:79.5, y:18.0, w:28, h:28 },
-  { id:'I', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:83.0, y:18.0, w:28, h:28 },
-  { id:'J', type:'stool', zone:'bar', icon:'SVG/BarStool.svg', x:86.5, y:18.0, w:28, h:28 },
+  { id:'P1', type:'table', zone:'patio',   icon:'🍽️', cx: 609,  cy: 783 },
+  { id:'P2', type:'table', zone:'patio',   icon:'🍽️', cx: 878,  cy: 716 },
+  { id:'P3', type:'table', zone:'patio',   icon:'🍽️', cx:1091,  cy: 716 },
+  { id:'P4', type:'table', zone:'patio',   icon:'🍽️', cx: 781,  cy: 831 },
+  { id:'P5', type:'table', zone:'patio',   icon:'🍽️', cx: 994,  cy: 831 },
 
   // ── DJ BOOTH ──
-  { id:'DJ', type:'dj', zone:'bar', icon:'SVG/DiningChair.svg', x:91.0, y:28.0, w:40, h:40 },
+  { id:'DJ', type:'dj',    zone:'bar',     icon:'🎵', cx: 254,  cy: 286 },
 
   // ── BATHROOM FIXTURES ──
-  { id:'WC-T1', type:'fixture', zone:'restroom', icon:'SVG/BathroomToilet.svg',  x:5.0, y:52.0, w:28, h:28, label:'Toilet M' },
-  { id:'WC-T2', type:'fixture', zone:'restroom', icon:'SVG/BathroomToilet.svg',  x:5.0, y:59.0, w:28, h:28, label:'Toilet F' },
-  { id:'WC-U1', type:'fixture', zone:'restroom', icon:'SVG/BathroomUrinal.svg',  x:5.0, y:44.0, w:24, h:24, label:'Urinal' },
-  { id:'WC-S1', type:'fixture', zone:'restroom', icon:'SVG/BathroomSink.svg',    x:5.0, y:66.0, w:26, h:26, label:'Sink M' },
-  { id:'WC-S2', type:'fixture', zone:'restroom', icon:'SVG/BathroomSink.svg',    x:5.0, y:73.0, w:26, h:26, label:'Sink F' },
+  { id:'WC-T1', type:'fixture', zone:'restroom', icon:'🚽', label:'Toilet M',  cx: 111, cy: 494 },
+  { id:'WC-T2', type:'fixture', zone:'restroom', icon:'🚽', label:'Toilet F',  cx: 111, cy: 558 },
+  { id:'WC-U1', type:'fixture', zone:'restroom', icon:'🚿', label:'Urinal 1',  cx: 279, cy: 456 },
+  { id:'WC-U2', type:'fixture', zone:'restroom', icon:'🚿', label:'Urinal 2',  cx: 279, cy: 498 },
+  { id:'WC-S1', type:'fixture', zone:'restroom', icon:'🪣', label:'Sink',      cx: 349, cy: 561 },
 ];
 
+// SVG namespace
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 // ── STATE ──────────────────────────────────────────────────────
-let state = {};
+let state   = {};
 let activeId = null;
 
 function defaultEntityState(e) {
@@ -114,7 +101,7 @@ function tickClock() {
   document.getElementById('clock').textContent = `${h}:${m}`;
 }
 
-// ── RENDER SERVER ROSTER ───────────────────────────────────────
+// ── SERVER ROSTER ──────────────────────────────────────────────
 function renderRoster() {
   const roster = document.getElementById('server-roster');
   roster.innerHTML = SERVERS.map(s => `
@@ -129,121 +116,140 @@ function renderRoster() {
     SERVERS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 }
 
-// ── BUILD ENTITY ELEMENT ────────────────────────────────────────
-function buildEntity(e) {
-  const st = state[e.id];
-  const el = document.createElement('div');
-  el.className = 'entity';
-  el.dataset.id = e.id;
-  el.dataset.status = st.reserved && e.type !== 'fixture' ? 'reserved' : st.status;
-  if (st.server !== null) el.dataset.server = st.server;
+// ── SVG OVERLAY BUILDER ────────────────────────────────────────
+// Each entity gets a <g class="ov-entity"> inside #interactive-layer.
+// It contains: server halo circle, status ring circle, label rect+text,
+// optional reserved badge.
 
-  const iconWrap = document.createElement('div');
-  iconWrap.className = 'entity-icon';
-
-  const img = document.createElement('img');
-  img.src = e.icon;
-  img.width = e.w; img.height = e.h;
-  img.draggable = false;
-
-  // tint patio tables green
-  if (e.zone === 'patio') img.style.filter = 'hue-rotate(120deg) saturate(1.5) brightness(.9)';
-  // tint DJ chair purple
-  if (e.type === 'dj') img.style.filter = 'hue-rotate(240deg) saturate(1.8) brightness(.85)';
-  // fixtures
-  if (e.type === 'fixture') img.style.filter = 'brightness(0) invert(.6)';
-
-  iconWrap.appendChild(img);
-
-  // reserved badge
-  if (st.reserved && e.type !== 'fixture') {
-    const badge = document.createElement('div');
-    badge.className = 'reserve-badge'; badge.textContent = 'R';
-    iconWrap.appendChild(badge);
-  }
-
-  el.appendChild(iconWrap);
-
-  // label
-  const lbl = document.createElement('div');
-  lbl.className = 'entity-label';
-  lbl.textContent = e.label || e.id;
-  el.appendChild(lbl);
-
-  // position — use saved override or default
-  const pos = getEntityPos(e);
-  el.style.left = `${pos.x}%`;
-  el.style.top  = `${pos.y}%`;
-  el.style.transform = 'translate(-50%, -50%)';
-
-  el.addEventListener('click', (ev) => {
-    if (editMode) return;   // clicks suppressed in edit mode
-    openPanel(e.id);
-  });
-
-  // drag: attach in edit mode via delegation (see wireEditMode)
-  el.addEventListener('mousedown', (ev) => {
-    if (!editMode) return;
-    ev.preventDefault();
-    const canvas = document.getElementById('floor-canvas');
-    const rect   = canvas.getBoundingClientRect();
-    dragState = {
-      id:          e.id,
-      el,
-      startMouseX: ev.clientX,
-      startMouseY: ev.clientY,
-      startX:      pos.x,
-      startY:      pos.y,
-      rectW:       rect.width,
-      rectH:       rect.height,
-    };
-    el.classList.add('dragging');
-  });
-
+function makeSVGEl(tag, attrs = {}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   return el;
 }
 
-// ── RENDER ALL ENTITIES ─────────────────────────────────────────
+function buildOverlay(e) {
+  const st = state[e.id];
+  const effectiveStatus = (st.reserved && e.type !== 'fixture') ? 'reserved' : st.status;
+
+  const g = makeSVGEl('g', {
+    class:          'ov-entity',
+    'data-id':      e.id,
+    'data-type':    e.type,
+    'data-status':  effectiveStatus,
+    ...(st.server !== null ? { 'data-server': String(st.server) } : {}),
+  });
+
+  // Server halo (outer glow ring — coloured by server)
+  const halo = makeSVGEl('circle', {
+    class: 'ov-halo',
+    cx: e.cx,
+    cy: e.cy,
+  });
+  g.appendChild(halo);
+
+  // Status ring
+  const ring = makeSVGEl('circle', {
+    class: 'ov-ring',
+    cx: e.cx,
+    cy: e.cy,
+  });
+  g.appendChild(ring);
+
+  // Label pill background + text
+  const labelText = e.label || e.id;
+  const pillW = Math.max(labelText.length * 6.5 + 8, 24);
+  const pillH = 14;
+  const pillX = e.cx - pillW / 2;
+  const pillY = e.cy + (e.type === 'stool' ? 17 : 24);
+
+  const pillBg = makeSVGEl('rect', {
+    class: 'ov-label-bg',
+    x: pillX, y: pillY,
+    width: pillW, height: pillH,
+    rx: 4,
+    fill: 'rgba(13,15,26,.82)',
+  });
+  g.appendChild(pillBg);
+
+  const pillTxt = makeSVGEl('text', {
+    class: 'ov-label-text',
+    x: e.cx,
+    y: pillY + pillH / 2,
+    'font-size': '11',
+    'font-weight': '700',
+    fill: '#e8eaf6',
+    'dominant-baseline': 'middle',
+    'text-anchor': 'middle',
+  });
+  pillTxt.textContent = labelText;
+  g.appendChild(pillTxt);
+
+  // Reserved badge (red R dot, top-right of ring)
+  if (st.reserved && e.type !== 'fixture') {
+    const badgeR = e.type === 'stool' ? 7 : 9;
+    const badgeX = e.cx + (e.type === 'stool' ? 13 : 18);
+    const badgeY = e.cy - (e.type === 'stool' ? 13 : 18);
+
+    const badgeBg = makeSVGEl('circle', {
+      cx: badgeX, cy: badgeY, r: badgeR,
+      fill: '#ef4444',
+    });
+    g.appendChild(badgeBg);
+
+    const badgeTxt = makeSVGEl('text', {
+      x: badgeX, y: badgeY,
+      'font-size': '8', 'font-weight': '900',
+      fill: '#fff',
+      'dominant-baseline': 'middle',
+      'text-anchor': 'middle',
+    });
+    badgeTxt.textContent = 'R';
+    g.appendChild(badgeTxt);
+  }
+
+  // Click handler
+  g.addEventListener('click', () => openPanel(e.id));
+
+  return g;
+}
+
+// ── RENDER ALL OVERLAYS ────────────────────────────────────────
 function renderEntities() {
-  const container = document.getElementById('entities');
-  container.innerHTML = '';
-  ENTITIES.forEach(e => container.appendChild(buildEntity(e)));
+  const layer = document.getElementById('interactive-layer');
+  layer.innerHTML = '';
+  ENTITIES.forEach(e => layer.appendChild(buildOverlay(e)));
 }
 
 function refreshEntity(id) {
-  const existing = document.querySelector(`.entity[data-id="${id}"]`);
+  const existing = document.querySelector(`[data-id="${id}"]`);
   const e = ENTITIES.find(x => x.id === id);
   if (!e || !existing) return;
-  const fresh = buildEntity(e);
+  const fresh = buildOverlay(e);
   existing.replaceWith(fresh);
 }
 
 // ── STATS CHIPS ────────────────────────────────────────────────
 function updateChips() {
-  const tables  = ENTITIES.filter(e => e.type === 'table' && e.zone === 'indoor');
-  const patio   = ENTITIES.filter(e => e.type === 'table' && e.zone === 'patio');
-  const stools  = ENTITIES.filter(e => e.type === 'stool');
+  const tables = ENTITIES.filter(e => e.type === 'table' && e.zone === 'indoor');
+  const patio  = ENTITIES.filter(e => e.type === 'table' && e.zone === 'patio');
+  const stools = ENTITIES.filter(e => e.type === 'stool');
 
-  const seated  = id => ['seated','ordered','bill'].includes(state[id]?.status);
-  const openSt  = id => state[id]?.status === 'open' && !state[id]?.reserved;
+  const seated = id => ['seated','ordered','bill'].includes(state[id]?.status);
+  const openSt = id => state[id]?.status === 'open' && !state[id]?.reserved;
 
-  const tSeat   = tables.filter(e => seated(e.id)).length;
-  const pSeat   = patio.filter(e => seated(e.id)).length;
-  const bOpen   = stools.filter(e => openSt(e.id)).length;
-
-  document.getElementById('chip-indoor').textContent = `Indoor: ${tSeat}/${tables.length}`;
-  document.getElementById('chip-patio').textContent  = `Patio: ${pSeat}/${patio.length}`;
-  document.getElementById('chip-bar').textContent    = `Bar: ${bOpen} open`;
+  document.getElementById('chip-indoor').textContent = `Indoor: ${tables.filter(e=>seated(e.id)).length}/${tables.length}`;
+  document.getElementById('chip-patio').textContent  = `Patio: ${patio.filter(e=>seated(e.id)).length}/${patio.length}`;
+  document.getElementById('chip-bar').textContent    = `Bar: ${stools.filter(e=>openSt(e.id)).length} open`;
 }
 
-// ── BATHROOM DOCK ───────────────────────────────────────────────
+// ── BATHROOM DOCK ──────────────────────────────────────────────
 function renderBathDock() {
   const fixtures = ENTITIES.filter(e => e.type === 'fixture');
   const dock = document.getElementById('bath-fixtures');
   dock.innerHTML = fixtures.map(e => {
     const out = state[e.id]?.status === 'outofservice';
     return `<div class="bath-fixture" data-fid="${e.id}">
-      <img src="${e.icon}" alt="">
+      <span class="bath-fixture-icon">${e.icon}</span>
       <span class="bath-fixture-name">${e.label || e.id}</span>
       <div class="bath-status-dot ${out ? 'out' : ''}"></div>
     </div>`;
@@ -257,26 +263,29 @@ function renderBathDock() {
       saveState();
       renderBathDock();
       refreshEntity(fid);
-      toast(st.status === 'outofservice' ? `⚠️ ${fid} marked Out of Service` : `✅ ${fid} back in service`);
+      toast(st.status === 'outofservice' ? `⚠️ ${fid} out of service` : `✅ ${fid} back in service`);
     });
   });
 }
 
-// ── PANEL ───────────────────────────────────────────────────────
+// ── PANEL ──────────────────────────────────────────────────────
 function openPanel(id) {
   activeId = id;
   const e  = ENTITIES.find(x => x.id === id);
   const st = state[id];
 
-  // header
+  // Header
   document.getElementById('panel-title').textContent = e.label || e.id;
-  document.getElementById('panel-zone').textContent  =
-    { indoor:'Indoor Dining', patio:'Patio', bar:'Bar', restroom:'Restroom', dj:'DJ Booth' }[e.zone] || e.zone;
+  document.getElementById('panel-zone').textContent =
+    { indoor:'Indoor Dining', patio:'Patio', bar:'Bar', restroom:'Restroom' }[e.zone] || e.zone;
 
+  // Icon: emoji + coloured ring
+  const effectiveStatus = (st.reserved && e.type !== 'fixture') ? 'reserved' : st.status;
   const iconWrap = document.getElementById('panel-icon');
-  iconWrap.innerHTML = `<img src="${e.icon}" alt="">`;
+  iconWrap.textContent = e.icon;
+  iconWrap.dataset.status = effectiveStatus;
 
-  // status buttons
+  // Status buttons
   const statuses = e.type === 'fixture'
     ? [{ s:'ok', label:'✅ OK' }, { s:'outofservice', label:'🔴 Out of Service' }]
     : e.type === 'dj'
@@ -302,28 +311,27 @@ function openPanel(id) {
     });
   });
 
-  // server select
+  // Server
   const sel = document.getElementById('server-select');
   sel.value = st.server !== null ? String(st.server) : '';
-  const serverSec = document.getElementById('server-select').closest('.panel-section');
-  serverSec.style.display = (e.type === 'fixture' || e.type === 'dj') ? 'none' : '';
+  sel.closest('.panel-section').style.display =
+    (e.type === 'fixture' || e.type === 'dj') ? 'none' : '';
 
-  // reserved
+  // Reserved
   const resSec = document.getElementById('reserved-section');
   resSec.style.display = (e.type === 'fixture' || e.type === 'dj' || e.type === 'stool') ? 'none' : '';
   const resBtn = document.getElementById('reserve-btn');
   resBtn.textContent = st.reserved ? '✅ Reserved — Click to Clear' : '🔴 Mark Reserved';
   resBtn.classList.toggle('active', st.reserved);
 
-  // order section
-  const ordSec = document.getElementById('order-section');
-  ordSec.style.display = e.type === 'fixture' ? 'none' : '';
+  // Orders
+  document.getElementById('order-section').style.display = e.type === 'fixture' ? 'none' : '';
   renderOrderList(id);
 
-  // notes
+  // Notes
   document.getElementById('panel-notes').value = st.notes || '';
 
-  // show
+  // Show panel
   document.getElementById('side-panel').classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
@@ -337,7 +345,10 @@ function closePanel() {
 function renderOrderList(id) {
   const list = document.getElementById('order-list');
   const orders = state[id]?.orders || [];
-  if (!orders.length) { list.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:4px 0">No orders yet</div>'; return; }
+  if (!orders.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:4px 0">No orders yet</div>';
+    return;
+  }
   list.innerHTML = orders.map((item, i) =>
     `<div class="order-item"><span>${item}</span><button class="order-item-remove" data-i="${i}">×</button></div>`
   ).join('');
@@ -349,7 +360,7 @@ function renderOrderList(id) {
   });
 }
 
-// ── EVENT WIRING ────────────────────────────────────────────────
+// ── EVENT WIRING ───────────────────────────────────────────────
 function wireEvents() {
   document.getElementById('panel-close').addEventListener('click', closePanel);
   document.getElementById('overlay').addEventListener('click', closePanel);
@@ -364,7 +375,7 @@ function wireEvents() {
     if (!activeId) return;
     state[activeId].reserved = !state[activeId].reserved;
     saveState(); refreshEntity(activeId); openPanel(activeId);
-    toast(state[activeId].reserved ? `🔴 ${activeId} reserved` : `✅ ${activeId} reservation cleared`);
+    toast(state[activeId].reserved ? `🔴 ${activeId} reserved` : `✅ ${activeId} cleared`);
   });
 
   document.querySelectorAll('.order-btn').forEach(btn => {
@@ -388,65 +399,7 @@ function wireEvents() {
   });
 }
 
-// ── EDIT MODE ENGINE ─────────────────────────────────────────────
-function wireEditMode() {
-  const btn      = document.getElementById('edit-mode-btn');
-  const resetBtn = document.getElementById('reset-pos-btn');
-
-  btn.addEventListener('click', () => {
-    editMode = !editMode;
-    document.body.classList.toggle('edit-mode', editMode);
-    btn.classList.toggle('active', editMode);
-    btn.textContent = editMode ? '💾 Save Layout' : '✏️ Edit Layout';
-    resetBtn.style.display = editMode ? '' : 'none';
-
-    if (!editMode) {
-      savePositions();
-      toast('✅ Layout saved!');
-    } else {
-      closePanel();
-      toast('✏️ Edit Mode — drag entities to position them');
-    }
-  });
-
-  resetBtn.addEventListener('click', () => {
-    if (!confirm('Reset all entity positions to defaults?')) return;
-    positions = {};
-    savePositions();
-    renderEntities();
-    toast('↺ Positions reset to defaults');
-  });
-
-  // Global mouse move — update dragged entity position live
-  document.addEventListener('mousemove', (ev) => {
-    if (!dragState) return;
-    const canvas = document.getElementById('floor-canvas');
-    const rect   = canvas.getBoundingClientRect();
-    const dx = ((ev.clientX - dragState.startMouseX) / dragState.rectW) * 100;
-    const dy = ((ev.clientY - dragState.startMouseY) / dragState.rectH) * 100;
-    const newX = Math.max(1, Math.min(99, dragState.startX + dx));
-    const newY = Math.max(1, Math.min(99, dragState.startY + dy));
-    dragState.el.style.left = `${newX}%`;
-    dragState.el.style.top  = `${newY}%`;
-  });
-
-  // Global mouse up — commit position
-  document.addEventListener('mouseup', (ev) => {
-    if (!dragState) return;
-    const canvas = document.getElementById('floor-canvas');
-    const rect   = canvas.getBoundingClientRect();
-    const dx = ((ev.clientX - dragState.startMouseX) / dragState.rectW) * 100;
-    const dy = ((ev.clientY - dragState.startMouseY) / dragState.rectH) * 100;
-    const newX = +Math.max(1, Math.min(99, dragState.startX + dx)).toFixed(2);
-    const newY = +Math.max(1, Math.min(99, dragState.startY + dy)).toFixed(2);
-    positions[dragState.id] = { x: newX, y: newY };
-    dragState.el.classList.remove('dragging');
-    dragState.el.style.transform = 'translate(-50%, -50%)';
-    dragState = null;
-  });
-}
-
-// ── TOAST ───────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────────
 let toastTimer = null;
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -456,16 +409,14 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-// ── INIT ────────────────────────────────────────────────────────
+// ── INIT ───────────────────────────────────────────────────────
 function init() {
-  loadPositions();
   loadState();
   renderRoster();
   renderEntities();
   renderBathDock();
   updateChips();
   wireEvents();
-  wireEditMode();
   tickClock();
   setInterval(tickClock, 30000);
 }
