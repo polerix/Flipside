@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flipside — Bar Management</title>
+<meta name="description" content="Live floor management for Flipside bar: tables, stools, servers, orders, reservations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── HEADER HUD ───────────────────────────────────────────── -->
+<header class="hud">
+  <div class="hud-logo">
+    <img src="SVG/BarLogoFLIPSIDE.svg" alt="Flipside" id="flipside-logo">
+  </div>
+  <div class="hud-stats">
+    <span class="chip" id="chip-indoor">Indoor: 0/0</span>
+    <span class="chip chip-patio" id="chip-patio">Patio: 0/0</span>
+    <span class="chip chip-bar" id="chip-bar">Bar: 0 open</span>
+  </div>
+  <div class="hud-servers" id="server-roster"></div>
+  <div class="hud-clock" id="clock">--:--</div>
+</header>
+
+<!-- ── FLOOR CANVAS ─────────────────────────────────────────── -->
+<main class="floor-wrap">
+  <!-- Floor plan: CompleteLayout.svg referenced as SVG image, overlaid with interactive layer -->
+  <svg id="floor-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1570.35 945.01">
+    <defs>
+      <!-- Dark filter applied only to the artwork image -->
+      <filter id="artwork-filter" color-interpolation-filters="sRGB">
+        <feColorMatrix type="saturate" values="0.8"/>
+        <feComponentTransfer>
+          <feFuncR type="linear" slope="0.5" intercept="0.05"/>
+          <feFuncG type="linear" slope="0.5" intercept="0.07"/>
+          <feFuncB type="linear" slope="0.6" intercept="0.12"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <!-- Artwork: tinted dark to match the app theme -->
+    <image href="SVG/CompleteLayout.svg" x="0" y="0" width="1570.35" height="945.01"
+           filter="url(#artwork-filter)"/>
+    <!-- Interactive overlay: status rings, labels, server halos — injected by app.js -->
+    <g id="interactive-layer"></g>
+  </svg>
+</main>
+
+<!-- ── SIDE PANEL ───────────────────────────────────────────── -->
+<aside class="side-panel" id="side-panel">
+  <button class="panel-close" id="panel-close">✕</button>
+  <div class="panel-header">
+    <div class="panel-icon-wrap" id="panel-icon"></div>
+    <div>
+      <div class="panel-title" id="panel-title">Table T1</div>
+      <div class="panel-zone" id="panel-zone">Indoor</div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="panel-section">
+    <div class="section-label">Status</div>
+    <div class="status-buttons" id="status-buttons"></div>
+  </div>
+
+  <!-- Server -->
+  <div class="panel-section">
+    <div class="section-label">Server</div>
+    <select id="server-select" class="panel-select">
+      <option value="">— Unassigned —</option>
+    </select>
+  </div>
+
+  <!-- Reserved toggle -->
+  <div class="panel-section" id="reserved-section">
+    <div class="section-label">Reservation</div>
+    <button class="reserve-btn" id="reserve-btn">🔴 Mark Reserved</button>
+  </div>
+
+  <!-- Order tracker -->
+  <div class="panel-section" id="order-section">
+    <div class="section-label">Order Tracker</div>
+    <div class="order-quick-btns">
+      <button class="order-btn" data-item="🍺 Beer">🍺 Beer</button>
+      <button class="order-btn" data-item="🍷 Wine">🍷 Wine</button>
+      <button class="order-btn" data-item="🍸 Cocktail">🍸 Cocktail</button>
+      <button class="order-btn" data-item="🥃 Shot">🥃 Shot</button>
+      <button class="order-btn" data-item="🥤 Soft">🥤 Soft</button>
+      <button class="order-btn" data-item="🍔 Food">🍔 Food</button>
+    </div>
+    <div class="order-list" id="order-list"></div>
+    <button class="clear-order-btn" id="clear-order">Clear Orders</button>
+  </div>
+
+  <!-- Notes -->
+  <div class="panel-section">
+    <div class="section-label">Notes</div>
+    <textarea class="panel-notes" id="panel-notes" placeholder="Special requests, VIP info…"></textarea>
+  </div>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<!-- ── BATHROOM STATUS DOCK ────────────────────────────────── -->
+<div class="bath-dock" id="bath-dock">
+  <div class="bath-title">🚻 Facilities</div>
+  <div id="bath-fixtures"></div>
+</div>
+
+<!-- ── TOAST ────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
